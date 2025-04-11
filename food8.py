@@ -1,34 +1,33 @@
-#import_necessary_library_file
 import cv2
 import pandas as pd
 from ultralytics import YOLO
 import matplotlib.pyplot as plt
 
-#load_the_YOLOV8N_Pretrained_model
+
 model = YOLO("yolov8n.pt")
 
-#load_nutrition_dataset_as_csv_file
+
 nutrition_df = pd.read_csv("coco_food_nutrition.csv")
 nutrition_df['Food'] = nutrition_df['Food'].str.lower()
 
-#Nutrient_labels_to_display
+
 nutrient_labels = ['Calories (kcal)', 'Protein (g)', 'Fat (g)', 'Carbohydrates (g)', 'Fiber (g)', 'Sugars (g)',
                    'Calcium (mg)', 'Iron (mg)', 'Magnesium (mg)', 'Phosphorus (mg)', 'Potassium (mg)',
                    'Sodium (mg)', 'Zinc (mg)', 'Vitamin C (mg)', 'Cholesterol (mg)']
 
-#Function_to_annotate_frames
-def annotate_frame(frame, results, detected_foods):  #Defines_a_function_to_draw_detection_boxes_and_nutrition_info_on_the_image.
-    font = cv2.FONT_HERSHEY_SIMPLEX #Sets_a_simple_sans-serif_font_style_for_text_display.
-    font_color = (139, 0, 0) #Defines_the_text_color_as_dark_blue_in_BGR_format.
-    font_scale = 0.5   #Sets_the_text_size_to_half_of_the_default_size.
 
-    for result in results: #Iterates over detection results returned by the YOLO model.
-        for box in result.boxes:  #Loops through each detected bounding box in the result.
-            cls_id = int(box.cls[0].item())  #Extracts the predicted class ID of the object.
-            class_name = model.names[cls_id].lower() #Converts the class ID to the corresponding class name (e.g., 'banana') in lowercase.
+def annotate_frame(frame, results, detected_foods):  
+    font = cv2.FONT_HERSHEY_SIMPLEX 
+    font_color = (139, 0, 0)
+    font_scale = 0.5 
 
-            if class_name in nutrition_df['Food'].values:  #Checks if the detected food is listed in the nutrition data CSV.
-                detected_foods.add(class_name)  #Adds the food item to a set of detected food names to avoid duplication.
+    for result in results: 
+        for box in result.boxes:  
+            cls_id = int(box.cls[0].item())  
+            class_name = model.names[cls_id].lower() 
+
+            if class_name in nutrition_df['Food'].values:  
+                detected_foods.add(class_name) 
                 conf = float(box.conf[0])
                 coords = box.xyxy[0].cpu().numpy().astype(int)
                 x1, y1, x2, y2 = coords
@@ -47,7 +46,6 @@ def annotate_frame(frame, results, detected_foods):  #Defines_a_function_to_draw
                         y_offset += 18
     return frame
 
-#option_for_detection_mode
 mode = input("Select detection mode:\n1. Static Image\n2. Live Camera\nEnter 1 or 2: ")
 
 detected_foods_total = set()
@@ -63,10 +61,9 @@ if mode == '1':
     results = model(image)
     annotated = annotate_frame(image.copy(), results, detected_foods_total)
 
-    #Convert_BGR_to_RGB_for_matplotlib
     image_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
 
-    #Plot_image_and_nutrition_summary
+   
     fig, axs = plt.subplots(2, 1, figsize=(12, 10))
 
     axs[0].imshow(image_rgb)
@@ -121,7 +118,7 @@ elif mode == '2':
     cap.release()
     cv2.destroyAllWindows()
 
-    #Show_nutrient_bar_chart_after_live_session
+  
     if detected_foods_total:
         print("\nNutrient Summary for Detected Foods:")
         plt.figure(figsize=(12, 6))
